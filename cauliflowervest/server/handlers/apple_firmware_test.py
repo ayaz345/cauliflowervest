@@ -54,9 +54,10 @@ class AppleFirmwareHandlerTest(test_util.BaseTest):
     hostname = 'host1'
     serial = 'SERIAL'
     self.testapp.put(
-        '/apple_firmware/?volume_uuid=%s&hostname=%s&platform_uuid=ID1' % (
-            serial, hostname),
-        params=password, status=httplib.OK)
+        f'/apple_firmware/?volume_uuid={serial}&hostname={hostname}&platform_uuid=ID1',
+        params=password,
+        status=httplib.OK,
+    )
 
     passwords = firmware.AppleFirmwarePassword.all().fetch(None)
 
@@ -115,7 +116,7 @@ class AppleFirmwarePasswordChangeOwnerTest(test_util.BaseTest):
 
   @property
   def change_owner_url(self):
-    return '/api/internal/change-owner/apple_firmware/%s/' % (self.volume_id)
+    return f'/api/internal/change-owner/apple_firmware/{self.volume_id}/'
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwner(self):

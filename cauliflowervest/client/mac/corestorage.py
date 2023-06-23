@@ -43,8 +43,7 @@ class CoreStorage(storage.Storage):
     except util.ExecError:
       return False  # Non-zero return means / volume isn't a CoreStorage volume.
 
-    lvf_uuid = csinfo_plist.get('MemberOfCoreStorageLogicalVolumeFamily')
-    if lvf_uuid:
+    if lvf_uuid := csinfo_plist.get('MemberOfCoreStorageLogicalVolumeFamily'):
       try:
         lvf_info_plist = util.GetPlistFromExec(
             (DISKUTIL, 'cs', 'info', '-plist', lvf_uuid))
@@ -73,7 +72,7 @@ class CoreStorage(storage.Storage):
       partitions = disk.get('Partitions', [])
       for partition in partitions:
         if partition.get('VolumeName') == 'Recovery HD':
-          return '/dev/%s' % partition['DeviceIdentifier']
+          return f"/dev/{partition['DeviceIdentifier']}"
 
   def _GetCoreStoragePlist(self, uuid=None):
     """Returns a dict of diskutil cs info plist for a given CoreStorage uuid.
@@ -101,12 +100,11 @@ class CoreStorage(storage.Storage):
   def GetPrimaryVolumeUUID(self):
     state, encrypted_uuids, unencrypted_uuids = self.GetStateAndVolumeIds()
     uuid = None
-    if state == State.ENCRYPTED or state == State.ENABLED:
+    if state in [State.ENCRYPTED, State.ENABLED]:
       if encrypted_uuids:
         uuid = encrypted_uuids[0]
-    else:
-      if unencrypted_uuids:
-        uuid = unencrypted_uuids[0]
+    elif unencrypted_uuids:
+      uuid = unencrypted_uuids[0]
     return uuid
 
   def GetStateAndVolumeIds(self):
@@ -187,7 +185,7 @@ class CoreStorage(storage.Storage):
       InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError(f'Invalid UUID: {uuid}')
     try:
       plist = util.GetPlistFromExec(
           (DISKUTIL, 'corestorage', 'info', '-plist', uuid))
@@ -196,10 +194,7 @@ class CoreStorage(storage.Storage):
       raise storage.Error
 
     num_bytes = plist['CoreStorageLogicalVolumeSize']
-    if readable:
-      return '%.2f GiB' % (num_bytes / (1<<30))
-    else:
-      return num_bytes
+    return '%.2f GiB' % (num_bytes / (1<<30)) if readable else num_bytes
 
   def UnlockVolume(self, uuid, passphrase):
     """Unlock a core storage encrypted volume.
@@ -212,15 +207,14 @@ class CoreStorage(storage.Storage):
       InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError(f'Invalid UUID: {uuid}')
     returncode, _, stderr = util.Exec(
         (DISKUTIL, 'corestorage', 'unlockVolume', uuid, '-stdinpassphrase'),
         stdin=passphrase)
     if (returncode != 0 and
         'volume is not locked' not in stderr and
         'is already unlocked' not in stderr):
-      raise storage.CouldNotUnlockError(
-          'Could not unlock volume (%s).' % returncode)
+      raise storage.CouldNotUnlockError(f'Could not unlock volume ({returncode}).')
 
   def RevertVolume(self, uuid, passphrase, unused_passwd=''):
     """Revert a core storage encrypted volume (to unencrypted state).
@@ -235,11 +229,10 @@ class CoreStorage(storage.Storage):
       InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError(f'Invalid UUID: {uuid}')
     self.UnlockVolume(uuid, passphrase)
     returncode, _, _ = util.Exec(
         (DISKUTIL, 'corestorage', 'revert', uuid, '-stdinpassphrase'),
         stdin=passphrase)
     if returncode != 0:
-      raise storage.CouldNotRevertError(
-          'Could not revert volume (%s).' % returncode)
+      raise storage.CouldNotRevertError(f'Could not revert volume ({returncode}).')

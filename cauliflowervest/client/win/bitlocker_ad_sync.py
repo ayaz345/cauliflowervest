@@ -196,8 +196,7 @@ class BitLockerAdSync(object):
       volume_guid = str(
           uuid.UUID(bytes_le=d['msFVE-VolumeGuid'][0])).upper()
     except ValueError:
-      raise InvalidGuid(
-          '%s: %s' % (hostname, d['msFVE-RecoveryGuid']))
+      raise InvalidGuid(f"{hostname}: {d['msFVE-RecoveryGuid']}")
 
     if FLAGS.redact_recovery_passwords:
       recovery_password = '--redacted--'
@@ -357,8 +356,7 @@ def _GetAdCredentials():
 
 def _GetOpener():
   credentials = base_client.GetOauthCredentials()
-  opener = base_client.BuildOauth2Opener(credentials)
-  return opener
+  return base_client.BuildOauth2Opener(credentials)
 
 
 def _GetLdapUrl():
@@ -371,7 +369,7 @@ def _GetLdapUrl():
 
 def main(_):
 
-  server_url = 'https://%s' % FLAGS.server_hostname
+  server_url = f'https://{FLAGS.server_hostname}'
 
   headers = {
       'User-agent': _GetUserAgent(),

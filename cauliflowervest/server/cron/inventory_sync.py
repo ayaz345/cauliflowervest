@@ -32,8 +32,7 @@ _BATCH_SIZE = 500
 
 
 def _deferred_name(model):
-  return 'inventory_sync_%s_%s' % (
-      model.ESCROW_TYPE_NAME, uuid.uuid4())
+  return f'inventory_sync_{model.ESCROW_TYPE_NAME}_{uuid.uuid4()}'
 
 
 def _sync_metadata(model, cursor=None, total_updated=0):

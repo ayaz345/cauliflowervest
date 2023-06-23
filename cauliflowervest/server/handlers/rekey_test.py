@@ -47,8 +47,8 @@ class RekeyModuleTest(test_util.BaseTest):
     self.v.force_rekeying = True
     self.v.put()
 
-    resp = self.testapp.get(
-        '/api/v1/rekey-required/luks/' + self.target_id, status=httplib.OK)
+    resp = self.testapp.get(f'/api/v1/rekey-required/luks/{self.target_id}',
+                            status=httplib.OK)
 
     self.assertTrue(util.FromSafeJson(resp.body))
 
@@ -56,16 +56,15 @@ class RekeyModuleTest(test_util.BaseTest):
     self.testbed.setup_env(user_email='', user_id='', overwrite=True)
     self.v.put()
 
-    self.testapp.get(
-        '/api/v1/rekey-required/luks/' + self.target_id,
-        status=httplib.FORBIDDEN)
+    self.testapp.get(f'/api/v1/rekey-required/luks/{self.target_id}',
+                     status=httplib.FORBIDDEN)
 
   def testExperimentalRekey(self):
     target_id = 'missing'
 
     memcache.Client().set(target_id, 1, namespace='experimental_rekey')
-    resp = self.testapp.get(
-        '/api/v1/rekey-required/luks/' + target_id, status=httplib.OK)
+    resp = self.testapp.get(f'/api/v1/rekey-required/luks/{target_id}',
+                            status=httplib.OK)
     self.assertEqual(')]}\',\n"experimental"', resp.body)
 
 

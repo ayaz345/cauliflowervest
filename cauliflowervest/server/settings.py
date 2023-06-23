@@ -14,6 +14,7 @@
 
 """Configurable settings module for the server."""
 
+
 import base64
 import os
 import sys
@@ -28,7 +29,6 @@ TEST = 'unittest2' in sys.modules or 'unittest' in sys.modules
 
 DEFAULT_CRYPTO_BACKEND = 'keyczar'
 
-DEFAULT_EMAIL_DOMAIN = 'example.com'
 DEFAULT_EMAIL_SENDER = 'user@example.com'
 DEFAULT_EMAIL_REPLY_TO = 'diff-user@example.com'
 
@@ -123,5 +123,4 @@ LINUX_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
 WINDOWS_FIRMWARE_RETRIEVAL_EMAIL_SUBJECT = (
     'Windows Firmware password retrieval notification')
 
-if TEST:
-  DEFAULT_EMAIL_DOMAIN = 'example.com'
+DEFAULT_EMAIL_DOMAIN = 'example.com'

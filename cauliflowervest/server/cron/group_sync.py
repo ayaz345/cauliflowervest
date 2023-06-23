@@ -103,13 +103,13 @@ class GroupSync(webapp2.RequestHandler):
     group_users = self._GetGroupMembersAndPermissions()
 
     # Get all key names from base.User Datastore kind; set() for O(1) lookup.
-    local_users = set([k.name() for k in base.User.all(keys_only=True)])
+    local_users = {k.name() for k in base.User.all(keys_only=True)}
 
     # Delete any local users that are no longer in any of the groups.
     users_to_delete = [u for u in local_users if u not in group_users]
-    keys_to_delete = [
-        db.Key.from_path(base.User.__name__, u) for u in users_to_delete]
-    if keys_to_delete:
+    if keys_to_delete := [
+        db.Key.from_path(base.User.__name__, u) for u in users_to_delete
+    ]:
       logging.debug('Deleting users: %s', users_to_delete)
       self._BatchDatastoreOp(db.delete, keys_to_delete)
 

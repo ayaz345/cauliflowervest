@@ -14,6 +14,7 @@
 
 """Configurable settings module shared between the client and server."""
 
+
 # Set SUBDOMAIN to your App Engine application identifier.
 
 # Change DOMAIN from appspot.com to your domain only if using a
@@ -24,7 +25,7 @@
 SUBDOMAIN = ''
 DOMAIN = 'appspot.com'
 
-SERVER_HOSTNAME = '%s.%s' % (SUBDOMAIN, DOMAIN)
+SERVER_HOSTNAME = f'{SUBDOMAIN}.{DOMAIN}'
 SERVER_PORT = 443
 
 BITLOCKER_REQUIRED_PROPERTIES = ['hostname', 'cn']

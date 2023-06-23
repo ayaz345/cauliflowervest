@@ -48,14 +48,14 @@ class ExecError(Error):
     self.stderr = stderr
 
   def __unicode__(self):
-    output = ['Message=%s' % self.args[0]]
+    output = [f'Message={self.args[0]}']
     if self.returncode is not None:
-      output.append('Return Code=%s' % self.returncode)
+      output.append(f'Return Code={self.returncode}')
     if self.stderr is not None:
       if type(self.stderr) is unicode:
-        output.append('stderr=%s' % self.stderr)
+        output.append(f'stderr={self.stderr}')
       elif type(self.stderr) is str:
-        output.append('stderr=%s' % self.stderr.decode('utf-8'))
+        output.append(f"stderr={self.stderr.decode('utf-8')}")
     return u', '.join(output)
 
   def __str__(self):
@@ -103,7 +103,7 @@ def GetPlistFromExec(cmd, stdin=None):
   try:
     return plistlib.readPlistFromString(stdout)
   except expat.ExpatError as e:
-    raise ExecError('Failed to parse plist: %s' % str(e))
+    raise ExecError(f'Failed to parse plist: {str(e)}')
 
 
 def GetRootDisk():
@@ -121,7 +121,7 @@ def GetRootDisk():
 
   if returncode != 0:
     raise Error(
-        'Could not enumerate mounted disks, mount exit status %s' % returncode)
+        f'Could not enumerate mounted disks, mount exit status {returncode}')
 
   for line in stdout.splitlines():
     try:
@@ -148,10 +148,7 @@ def JoinURL(base_url, *args):
     if part.startswith('/'):
       part = part[1:]
 
-    if not url or url.endswith('/'):
-      url +=  part
-    else:
-      url += '/' + part
+    url += part if not url or url.endswith('/') else f'/{part}'
   return url
 
 
@@ -190,7 +187,7 @@ def RetrieveEntropy():
     raise RetrieveEntropyError('/usr/sbin/ioreg not executable')
 
   if rc != 0:
-    raise RetrieveEntropyError('ioreg exit status %s' % rc)
+    raise RetrieveEntropyError(f'ioreg exit status {rc}')
   if not stdout:
     raise RetrieveEntropyError('ioreg no or insufficient stdout')
 
@@ -207,12 +204,10 @@ def RetrieveEntropy():
       l = l.strip()
       output.append(l)
 
-  output = ''.join(output)
-
-  if not output:
+  if output := ''.join(output):
+    return output
+  else:
     raise RetrieveEntropyError('ioreg unexpected output yieled no entropy')
-
-  return output
 
 
 def SupplyEntropy(entropy, open_=open):

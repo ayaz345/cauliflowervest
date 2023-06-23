@@ -49,10 +49,10 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
         }
 
     resp = gae_main.app.get_response(
-        '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+        f'/luks/{volume_uuid}/?{urllib.urlencode(params)}',
         {'REQUEST_METHOD': 'PUT'},
-        body='passphrase'
-        )
+        body='passphrase',
+    )
 
     self.assertEqual(httplib.OK, resp.status_int)
     self.assertEqual('Secret successfully escrowed!', resp.body)
@@ -67,10 +67,10 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
         }
 
     resp = gae_main.app.get_response(
-        '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+        f'/luks/{volume_uuid}/?{urllib.urlencode(params)}',
         {'REQUEST_METHOD': 'PUT'},
-        body='passphrase'
-        )
+        body='passphrase',
+    )
 
     self.assertEqual(httplib.FORBIDDEN, resp.status_int)
 
@@ -84,9 +84,9 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
         }
 
     resp = gae_main.app.get_response(
-        '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
+        f'/luks/{volume_uuid}/?{urllib.urlencode(params)}',
         {'REQUEST_METHOD': 'PUT'},
-        body='passphrase'
+        body='passphrase',
     )
     self.assertEqual(httplib.OK, resp.status_int)
 
@@ -100,8 +100,8 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
         }
 
     resp = gae_main.app.get_response(
-        '/luks/%s/?%s' % (volume_uuid, urllib.urlencode(params)),
-        {'REQUEST_METHOD': 'PUT'}
+        f'/luks/{volume_uuid}/?{urllib.urlencode(params)}',
+        {'REQUEST_METHOD': 'PUT'},
     )
     self.assertEqual(httplib.BAD_REQUEST, resp.status_int)
     self.assertEqual(
@@ -122,7 +122,7 @@ class NewLuksRequestHandlerTest(test_util.BaseTest):
 
     self.c.request = mock.MagicMock()
     self.c.request.content_type = 'application/x-www-form-urlencoded'
-    self.c.request.body = passphrase + '='
+    self.c.request.body = f'{passphrase}='
     self.c.request.get.return_value = ''
 
     self.c.put(volume_uuid)

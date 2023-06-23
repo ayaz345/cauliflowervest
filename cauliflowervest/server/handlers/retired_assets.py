@@ -40,8 +40,7 @@ class RetiredAssets(base_handler.BaseHandler):
         res['active'].append(serial)
         continue
 
-      entity = firmware.AppleFirmwarePassword.GetLatestForTarget(serial)
-      if entity:
+      if entity := firmware.AppleFirmwarePassword.GetLatestForTarget(serial):
         firmware.AppleFirmwarePasswordAccessLog.Log(
             message='GET', entity=entity, request=self.request)
 

@@ -83,7 +83,7 @@ class AppEngineTestCase(absltest.TestCase):
     instance_id = ''.join(random.sample(string.letters + string.digits, 26))
     # More like the production environment: "testbed-version.123123123", rather
     # than the default "testbed-version".
-    current_version_id = 'testbed-version.%s' % random.randint(1, 1000000000000)
+    current_version_id = f'testbed-version.{random.randint(1, 1000000000000)}'
     self.testbed.setup_env(
         request_id_hash=request_id_hash, instance_id=instance_id,
         current_version_id=current_version_id, overwrite=True)
@@ -182,8 +182,7 @@ class AppEngineTestCase(absltest.TestCase):
     """Sets the hostname environ variables."""
     self.testbed.setup_env(
         default_version_hostname=default_version_hostname or hostname,
-        # Make sure code is compatible with dev_appserver by always adding port:
-        http_host='%s:%s' % (hostname, port),
+        http_host=f'{hostname}:{port}',
         overwrite=True,
         server_name=hostname,
     )

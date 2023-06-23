@@ -101,7 +101,7 @@ class SearchModuleTest(test_util.BaseTest):
 
   def testPassphrasesFoQueryCreatedBy(self):
     created_by = 'foouser'
-    email = '%s@%s' % (created_by, os.environ['AUTH_DOMAIN'])
+    email = f"{created_by}@{os.environ['AUTH_DOMAIN']}"
 
     volumes = search._PassphrasesForQuery(
         models.BitLockerVolume, 'created_by', created_by)
@@ -172,7 +172,7 @@ class SearchModuleTest(test_util.BaseTest):
   def testProvisioningQueryCreatedBySortingOrder(self):
     models.ProvisioningVolume.created.auto_now = False
 
-    today = datetime.datetime.today()
+    today = datetime.datetime.now()
 
     for i in range(2 * search.MAX_PASSPHRASES_PER_QUERY):
       models.ProvisioningVolume(

@@ -43,7 +43,7 @@ class ChangeOwnerHandler(base_handler.BaseHandler):
     entity = self.SECRET_MODEL.get(db_key)
     if not entity:
       return self.error(httplib.NOT_FOUND)
-    if entity and not entity.active:
+    if not entity.active:
       return self.error(httplib.BAD_REQUEST)
 
     self.VerifyXsrfToken(base_settings.CHANGE_OWNER_ACTION)

@@ -84,10 +84,11 @@ class SystemProfile(object):
       or not found.
     """
     data_type = self.DATA_TYPES.get(data_type_key)
-    for d in self._system_profile:
-      if data_type and d.get('_dataType') == data_type and '_items' in d:
-        return d['_items']
-    return []
+    return next(
+        (d['_items'] for d in self._system_profile
+         if data_type and d.get('_dataType') == data_type and '_items' in d),
+        [],
+    )
 
   def _FindHDDSerial(self):
     """Find the primary Hard Drive Disk serial number."""
@@ -139,9 +140,9 @@ class SystemProfile(object):
             intf_type = None
 
           if intf_type is not None:
-            self._profile['%s_mac' % intf_type] = intf_mac
+            self._profile[f'{intf_type}_mac'] = intf_mac
             if intf_name is not None:
-              self._profile['interface_%s' % intf_name] = intf_type
+              self._profile[f'interface_{intf_name}'] = intf_type
 
   def _FindBatteryInfo(self):
     """Find battery info."""

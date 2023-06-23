@@ -81,10 +81,7 @@ def status_callback(status):
     status: Boolean: success or failure
   """
   global exit_status
-  if status:
-    exit_status = 0
-  else:
-    exit_status = 1
+  exit_status = 0 if status else 1
 
 
 @base_flags.HandleBaseFlags

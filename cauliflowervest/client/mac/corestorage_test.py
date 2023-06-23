@@ -376,7 +376,10 @@ class CoreStorageTest(absltest.TestCase):
     mock_uuid = str(uuid.uuid4())
     mock_passphrase = str(uuid.uuid4())
     exec_mock.return_value = (
-        1, '', '%s is already unlocked and is attached as disk1' % mock_uuid)
+        1,
+        '',
+        f'{mock_uuid} is already unlocked and is attached as disk1',
+    )
 
     cs = corestorage.CoreStorage()
     cs.UnlockVolume(mock_uuid, mock_passphrase)

@@ -40,9 +40,8 @@ XSRF_TOKEN_GENERATE_HANDLER = 'XsrfTokenGenerateHandler'
 
 def _GetApiUser():
   """Get the GAE `User` object for the currently authenticated user."""
-  user = users.get_current_user()
-  if user: return user
-
+  if user := users.get_current_user():
+    return user
   # Note (http://goo.gl/PCgGNp): "On the local development server,
   # oauth.get_current_user() always returns a User object with email set
   # to "example@example.com" and user ID set to 0 regardless of whether or
@@ -111,7 +110,7 @@ class OwnersProperty(db.StringListProperty):
       return value
 
     if '@' not in value:
-      value = '%s@%s' % (value, settings.DEFAULT_EMAIL_DOMAIN)
+      value = f'{value}@{settings.DEFAULT_EMAIL_DOMAIN}'
     return value
 
   def validate(self, value):
@@ -163,9 +162,11 @@ class BasePassphrase(db.Model):
     logging.info('changes owners of %s from %s to %s',
                  self.target_id, self.owners, new_owners)
     self.AUDIT_LOG_MODEL.Log(
-        entity=self, request=request,
-        message='changes owners of %s from %s to %s' % (
-            self.target_id, self.owners, new_owners))
+        entity=self,
+        request=request,
+        message=
+        f'changes owners of {self.target_id} from {self.owners} to {new_owners}',
+    )
 
     self._UpdateMutableProperties(self.key(), {
         'owners': new_owners,
@@ -174,10 +175,7 @@ class BasePassphrase(db.Model):
     return True
 
   def __eq__(self, other):
-    for p in self.properties():
-      if getattr(self, p) != getattr(other, p):
-        return False
-    return True
+    return all(getattr(self, p) == getattr(other, p) for p in self.properties())
 
   def __ne__(self, other):
     return not self.__eq__(other)
@@ -193,11 +191,10 @@ class BasePassphrase(db.Model):
 
   @classmethod
   def GetLatestForTarget(cls, target_id, tag='default'):
-    entity = cls.all().filter('tag =', tag).filter(
-        '%s =' % cls.TARGET_PROPERTY_NAME, target_id).order('-created').fetch(1)
-    if not entity:
-      return None
-    return entity[0]
+    entity = (cls.all().filter('tag =',
+                               tag).filter(f'{cls.TARGET_PROPERTY_NAME} =',
+                                           target_id).order('-created').fetch(1))
+    return None if not entity else entity[0]
 
   def Clone(self):
     items = {p.name: getattr(self, p.name) for p in self.properties().values()
@@ -210,8 +207,7 @@ class BasePassphrase(db.Model):
   def _PutNew(self, ancestor_key, *args, **kwargs):
     ancestor = self.get(ancestor_key)
     if not ancestor.active:
-      raise self.ACCESS_ERR_CLS(
-          'parent entity is inactive: %s.' % self.target_id)
+      raise self.ACCESS_ERR_CLS(f'parent entity is inactive: {self.target_id}.')
     ancestor.active = False
     super(BasePassphrase, ancestor).put(*args, **kwargs)
     return super(BasePassphrase, self).put(*args, **kwargs)
@@ -237,15 +233,13 @@ class BasePassphrase(db.Model):
     model_name = self.__class__.__name__
     for prop_name in self.REQUIRED_PROPERTIES:
       if not getattr(self, prop_name, None):
-        raise self.ACCESS_ERR_CLS('Required property empty: %s' % prop_name)
+        raise self.ACCESS_ERR_CLS(f'Required property empty: {prop_name}')
 
     if not self.active:
-      raise self.ACCESS_ERR_CLS(
-          'New entity is not active: %s' % self.target_id)
+      raise self.ACCESS_ERR_CLS(f'New entity is not active: {self.target_id}')
 
     if self.has_key():
-      raise self.ACCESS_ERR_CLS(
-          'Key should be auto genenrated for %s.' % model_name)
+      raise self.ACCESS_ERR_CLS(f'Key should be auto genenrated for {model_name}.')
 
     existing_entity = parent
     if not existing_entity:
@@ -253,21 +247,18 @@ class BasePassphrase(db.Model):
           self.target_id, tag=self.tag)
     if existing_entity:
       if not existing_entity.active:
-        raise self.ACCESS_ERR_CLS(
-            'parent entity is inactive: %s.' % self.target_id)
-      different_properties = []
-      for prop in self.properties():
-        if getattr(self, prop) != getattr(existing_entity, prop):
-          different_properties.append(prop)
-
+        raise self.ACCESS_ERR_CLS(f'parent entity is inactive: {self.target_id}.')
+      different_properties = [
+          prop for prop in self.properties()
+          if getattr(self, prop) != getattr(existing_entity, prop)
+      ]
       if not different_properties or different_properties == ['created']:
         raise errors.DuplicateEntity()
 
       if self.created > existing_entity.created:
         return self._PutNew(existing_entity.key())
-      else:
-        logging.warning('entity from past')
-        self.active = False
+      logging.warning('entity from past')
+      self.active = False
 
     return super(BasePassphrase, self).put(*args, **kwargs)
 
@@ -276,7 +267,7 @@ class BasePassphrase(db.Model):
   def _UpdateMutableProperties(cls, key, changes):
     entity = cls.get(key)
     if not entity.active:
-      raise cls.ACCESS_ERR_CLS('entity is inactive: %s.' % entity.target_id)
+      raise cls.ACCESS_ERR_CLS(f'entity is inactive: {entity.target_id}.')
 
     for property_name, value in changes.iteritems():
       if property_name == 'hostname':
@@ -374,7 +365,7 @@ class User(db.Model):
     """
     perm_prop = self._PERMISSION_PROPERTIES.get(permission_type)
     if not perm_prop:
-      raise ValueError('unknown permission_type: %s' % permission_type)
+      raise ValueError(f'unknown permission_type: {permission_type}')
 
     base_perms = settings.DEFAULT_PERMISSIONS.get(permission_type, ())
     return perm in base_perms or perm in getattr(self, perm_prop, [])
@@ -388,10 +379,10 @@ class User(db.Model):
     Raises:
       ValueError: the requested permission_type was invalid or unknown.
     """
-    perm_prop = self._PERMISSION_PROPERTIES.get(permission_type)
-    if not perm_prop:
-      raise ValueError('unknown permission_type: %s' % permission_type)
-    setattr(self, perm_prop, list(perms))
+    if perm_prop := self._PERMISSION_PROPERTIES.get(permission_type):
+      setattr(self, perm_prop, list(perms))
+    else:
+      raise ValueError(f'unknown permission_type: {permission_type}')
 
 
 class AccessLog(db.Model):
@@ -409,7 +400,7 @@ class AccessLog(db.Model):
   def put(self):  # pylint: disable=g-bad-name
     """Override put to automatically calculate pagination properties."""
     counter = memcache.incr('AccessLogCounter', initial_value=0)
-    self.paginate_mtime = '%s_%s' % (self.mtime, counter)
+    self.paginate_mtime = f'{self.mtime}_{counter}'
     super(AccessLog, self).put()
 
   @classmethod
@@ -426,6 +417,6 @@ class AccessLog(db.Model):
       if p in kwargs:
         setattr(log, p, kwargs[p])
     if request:
-      log.query = '%s?%s' % (request.path, request.query_string)
+      log.query = f'{request.path}?{request.query_string}'
       log.ip_address = request.remote_addr
     log.put()

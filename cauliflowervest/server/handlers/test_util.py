@@ -64,7 +64,7 @@ def MakeBitLockerVolume(save=True, **kwargs):
   """Put default BitlockerVolume to datastore."""
   volume_uuid = str(uuid.uuid4()).upper()
   hostname = volumes.BitLockerVolume.NormalizeHostname(
-      volume_uuid + '.example.com')
+      f'{volume_uuid}.example.com')
 
   defaults = {
       'hostname': hostname,
@@ -75,9 +75,7 @@ def MakeBitLockerVolume(save=True, **kwargs):
       'volume_uuid': volume_uuid,
       'tag': 'default',
       'recovery_guid': 'guid123',
-  }
-  defaults.update(kwargs)
-
+  } | kwargs
   volume = volumes.BitLockerVolume(**defaults)
   if save:
     volume.put()
@@ -93,9 +91,7 @@ def MakeFileVaultVolume(save=True, **kwargs):
       'owner': 'someone',
       'serial': 'foo',
       'platform_uuid': 'bar',
-  }
-  defaults.update(kwargs)
-
+  } | kwargs
   volume = volumes.FileVaultVolume(**defaults)
   if save:
     volume.put()
@@ -110,9 +106,7 @@ def MakeDuplicityKeyPair(save=True, **kwargs):
       'owner': 'someone',
       'hostname': 'hostname1',
       'platform_uuid': 'bar',
-  }
-  defaults.update(kwargs)
-
+  } | kwargs
   volume = backups.DuplicityKeyPair(**defaults)
   if save:
     volume.put()
@@ -128,9 +122,7 @@ def MakeAppleFirmware(save=True, **kwargs):
       'owner': 'someone',
       'asset_tags': ['12345'],
       'hostname': 'zerocool.example.com',
-  }
-  defaults.update(kwargs)
-
+  } | kwargs
   entity = firmware.AppleFirmwarePassword(**defaults)
   if save:
     entity.put()
@@ -147,9 +139,7 @@ def MakeLinuxFirmware(save=True, **kwargs):
       'owner': 'someone',
       'asset_tags': ['12345'],
       'hostname': 'zerocool.example.com',
-  }
-  defaults.update(kwargs)
-
+  } | kwargs
   entity = firmware.LinuxFirmwarePassword(**defaults)
   if save:
     entity.put()
@@ -166,11 +156,7 @@ def RunAllDeferredTasks(tb, queue_name=None):
     tb: Your test's testbed instance.
     queue_name: String. The name the queue whose tasks should be run.
   """
-  if queue_name:
-    queue_names = [queue_name]
-  else:
-    queue_names = QUEUE_NAMES
-
+  queue_names = [queue_name] if queue_name else QUEUE_NAMES
   taskqueue = tb.get_stub(testbed.TASKQUEUE_SERVICE_NAME)
 
   for name in queue_names:

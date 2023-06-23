@@ -51,9 +51,10 @@ class WindowsFirmwareHandlerTest(test_util.BaseTest):
     hostname = 'host1'
     serial = 'SERIAL'
     self.testapp.put(
-        '/windows_firmware/?volume_uuid=%s&hostname=%s&smbios_guid=ID1' % (
-            serial, hostname),
-        params=password, status=httplib.OK)
+        f'/windows_firmware/?volume_uuid={serial}&hostname={hostname}&smbios_guid=ID1',
+        params=password,
+        status=httplib.OK,
+    )
 
     passwords = firmware.WindowsFirmwarePassword.all().fetch(None)
 

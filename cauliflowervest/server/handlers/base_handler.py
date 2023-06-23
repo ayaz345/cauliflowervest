@@ -44,11 +44,9 @@ def VerifyPermissions(required_permission, user, permission_type):
 
   try:
     if not user.HasPerm(required_permission, permission_type=permission_type):
-      raise errors.AccessDeniedError(
-          'User lacks %s permission' % required_permission)
+      raise errors.AccessDeniedError(f'User lacks {required_permission} permission')
   except ValueError:
-    raise errors.AccessDeniedError(
-        'unknown permission_type: %s' % permission_type)
+    raise errors.AccessDeniedError(f'unknown permission_type: {permission_type}')
 
 
 def VerifyAllPermissionTypes(required_permission, user=None):

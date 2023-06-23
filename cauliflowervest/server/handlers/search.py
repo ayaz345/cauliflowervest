@@ -47,7 +47,7 @@ def _PassphrasesForQuery(model, search_field, value, prefix_search=False):
 
   if search_field == 'created_by':
     if '@' not in value:
-      value = '%s@%s' % (value, os.environ.get('AUTH_DOMAIN'))
+      value = f"{value}@{os.environ.get('AUTH_DOMAIN')}"
     value = users.User(value)
   elif search_field == 'hostname':
     value = model.NormalizeHostname(value)
@@ -55,14 +55,14 @@ def _PassphrasesForQuery(model, search_field, value, prefix_search=False):
   if prefix_search and search_field != 'created_by':
     if search_field == 'owner':
       search_field = 'owners'
-    query.filter('%s >=' % search_field, value).filter(
-        '%s <' % search_field, value + u'\ufffd')
+    query.filter(f'{search_field} >=', value).filter(f'{search_field} <',
+                                                     value + u'\ufffd')
   elif search_field == 'owner' and not prefix_search:
     if '@' not in value:
-      value = '%s@%s' % (value, settings.DEFAULT_EMAIL_DOMAIN)
+      value = f'{value}@{settings.DEFAULT_EMAIL_DOMAIN}'
     query.filter('owners =', value)
   else:
-    query.filter(search_field + ' =', value)
+    query.filter(f'{search_field} =', value)
 
   if (model.ESCROW_TYPE_NAME == permissions.TYPE_PROVISIONING
       and search_field == 'created_by'):
@@ -84,9 +84,7 @@ class Search(passphrase_handler.PassphraseHandler):
       prefix_search = urllib.quote(self.request.get('prefix_search', '0'))
 
       if search_type and field1 and value1:
-        self.redirect(
-            '/ui/#/search/%s/%s/%s/%s' % (
-                search_type, field1, value1, prefix_search))
+        self.redirect(f'/ui/#/search/{search_type}/{field1}/{value1}/{prefix_search}')
       else:
         self.redirect('/ui/', permanent=True)
       return
@@ -101,7 +99,7 @@ class Search(passphrase_handler.PassphraseHandler):
       model = models_util.TypeNameToModel(search_type)
     except ValueError:
       raise passphrase_handler.InvalidArgumentError(
-          'Invalid search_type %s' % search_type)
+          f'Invalid search_type {search_type}')
 
     if not (field1 and value1):
       raise base_handler.InvalidArgumentError('Missing field1 or value1')
@@ -117,7 +115,7 @@ class Search(passphrase_handler.PassphraseHandler):
     if (not search_perms.get(search_type)
         and not retrieve_perms.get(search_type)
         and not retrieve_created.get(search_type)):
-      raise errors.AccessDeniedError('User lacks %s permission' % search_type)
+      raise errors.AccessDeniedError(f'User lacks {search_type} permission')
 
     try:
       passphrases = _PassphrasesForQuery(model, field1, value1, prefix_search)
@@ -139,8 +137,7 @@ class Search(passphrase_handler.PassphraseHandler):
       for passphrase in passphrases:
         if not passphrase['active']:
           continue
-        link = '/api/internal/change-owner/%s/%s/' % (
-            search_type, passphrase['id'])
+        link = f"/api/internal/change-owner/{search_type}/{passphrase['id']}/"
         passphrase['change_owner_link'] = link
 
     self.response.out.write(util.ToSafeJson({

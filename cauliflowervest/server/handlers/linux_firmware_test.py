@@ -52,15 +52,16 @@ class LinuxFirmwareHandlerTest(test_util.BaseTest):
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testUpload(self):
-    password = '012'
     hostname = 'host1'
     serial = 'SERIAL'
     manufacturer = 'Vendor Inc.'
     machine_uuid = 'ID1'
+    password = '012'
     self.testapp.put(
-        '/linux_firmware/?volume_uuid=%s&hostname=%s&machine_uuid=%s'
-        '&manufacturer=%s' % (serial, hostname, machine_uuid, manufacturer),
-        params=password, status=httplib.OK)
+        f'/linux_firmware/?volume_uuid={serial}&hostname={hostname}&machine_uuid={machine_uuid}&manufacturer={manufacturer}',
+        params=password,
+        status=httplib.OK,
+    )
 
     passwords = firmware.LinuxFirmwarePassword.all().fetch(None)
 
@@ -73,16 +74,17 @@ class LinuxFirmwareHandlerTest(test_util.BaseTest):
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testUploadMalformedSecrets(self):
+    hostname = 'host1'
+    serial = 'SERIAL'
+    manufacturer = 'Vendor Inc.'
+    machine_uuid = 'ID1'
     malformed_secrets = ['0123456789' '012345', '01', '01234!']
     for password in malformed_secrets:
-      hostname = 'host1'
-      serial = 'SERIAL'
-      manufacturer = 'Vendor Inc.'
-      machine_uuid = 'ID1'
       resp = self.testapp.put(
-          '/linux_firmware/?volume_uuid=%s&hostname=%s&machine_uuid=%s'
-          '&manufacturer=%s' % (serial, hostname, machine_uuid, manufacturer),
-          params=password, status=httplib.BAD_REQUEST)
+          f'/linux_firmware/?volume_uuid={serial}&hostname={hostname}&machine_uuid={machine_uuid}&manufacturer={manufacturer}',
+          params=password,
+          status=httplib.BAD_REQUEST,
+      )
       resp.mustcontain('secret is malformed')
 
       passwords = firmware.LinuxFirmwarePassword.all().fetch(None)
@@ -141,7 +143,7 @@ class LinuxFirmwarePasswordChangeOwnerTest(test_util.BaseTest):
 
   @property
   def change_owner_url(self):
-    return '/api/internal/change-owner/linux_firmware/%s/' % (self.volume_id)
+    return f'/api/internal/change-owner/linux_firmware/{self.volume_id}/'
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwner(self):

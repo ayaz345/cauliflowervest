@@ -86,7 +86,7 @@ def SendRetrievalEmail(
   if skip_emails:
     to = [email for email in to if email not in skip_emails]
 
-  subject_var = '%s_RETRIEVAL_EMAIL_SUBJECT' % entity.ESCROW_TYPE_NAME.upper()
+  subject_var = f'{entity.ESCROW_TYPE_NAME.upper()}_RETRIEVAL_EMAIL_SUBJECT'
   subject = getattr(
       settings, subject_var, 'Escrow secret retrieval notification.')
   util.SendEmail(to, subject, body)
@@ -144,17 +144,14 @@ class PassphraseHandler(base_handler.BaseHandler):
 
   def GetSecretFromBody(self):
     """Returns the uploaded secret from a PUT or POST request."""
-    secret = self.request.body
-    if not secret:
-      return None
-
-    # Work around a client/server bug which causes a stray '=' to be added
-    # to the request body when a form-encoded content type is sent.
-    if (self.request.content_type ==
-        'application/x-www-form-urlencoded' and secret[-1] == '='):
-      return secret[:-1]
+    if secret := self.request.body:
+        # Work around a client/server bug which causes a stray '=' to be added
+        # to the request body when a form-encoded content type is sent.
+      return (secret[:-1] if
+              (self.request.content_type == 'application/x-www-form-urlencoded'
+               and secret[-1] == '=') else secret)
     else:
-      return secret
+      return None
 
   def IsValidSecret(self, unused_secret):
     """Returns true if secret str is a well formatted."""
@@ -181,8 +178,7 @@ class PassphraseHandler(base_handler.BaseHandler):
 
     entity = self._CreateNewSecretEntity(owner, target_id, secret)
     for prop_name in entity.properties():
-      value = metadata.get(prop_name)
-      if value:
+      if value := metadata.get(prop_name):
         setattr(entity, prop_name, self.SanitizeEntityValue(prop_name, value))
 
     inventory = service_factory.GetInventoryService()
@@ -248,8 +244,7 @@ class PassphraseHandler(base_handler.BaseHandler):
           target_id, tag=self.request.get('tag', 'default'))
 
     if not entity:
-      raise errors.NotFoundError(
-          'Passphrase not found: target_id %s' % target_id)
+      raise errors.NotFoundError(f'Passphrase not found: target_id {target_id}')
 
     self.CheckRetrieveAuthorizationAndNotifyOwner(entity=entity)
 
@@ -274,9 +269,8 @@ class PassphraseHandler(base_handler.BaseHandler):
         'escrow_secret': escrow_secret,
         'checksum': entity.checksum,
         'recovery_str': recovery_str,
+        self.JSON_SECRET_NAME: escrow_secret,
     }
-
-    params[self.JSON_SECRET_NAME] = escrow_secret
 
     if entity.active:
       entity.UpdateMutableProperty('force_rekeying', True)
@@ -284,7 +278,7 @@ class PassphraseHandler(base_handler.BaseHandler):
     self.response.out.write(util.ToSafeJson(params))
 
   def _PassphraseTypeName(self, entity):
-    return '%s key' % entity.ESCROW_TYPE_NAME
+    return f'{entity.ESCROW_TYPE_NAME} key'
 
   def SanitizeEntityValue(self, unused_prop_name, value):
     if value is not None:

@@ -52,7 +52,7 @@ class GroupSyncTest(absltest.TestCase):
         'another_permissions_type': 'anything',
         }
     for permission_type in group_sync.permissions.TYPES:
-      user_perms[permission_type] = set(['read', 'write'])
+      user_perms[permission_type] = {'read', 'write'}
 
     mock_obj = mock.MagicMock()
     users_user.return_value = 'user_obj'
@@ -75,9 +75,10 @@ class GroupSyncTest(absltest.TestCase):
 
     self.assertEqual(mock_obj, self.g._MakeUserEntity(email, user_perms))
 
-    calls = []
-    for permission_type in group_sync.permissions.TYPES:
-      calls.append(mock.call([], permission_type))
+    calls = [
+        mock.call([], permission_type)
+        for permission_type in group_sync.permissions.TYPES
+    ]
     mock_obj.SetPerms.assert_has_calls(calls)
 
   @mock.patch.object(service_factory, 'GetAccountsService')
@@ -96,11 +97,17 @@ class GroupSyncTest(absltest.TestCase):
     group2 = ['u1@example.com']
 
     expected_return = {
-        'u2@example.com': {'type1': set(['read', 'write'])},
-        'u3@example.com': {'type1': set(['read', 'write'])},
-        'u1@example.com': {'type1': set(['read', 'write', 'list']),
-                           'type2': set(['read', 'write'])},
-        }
+        'u2@example.com': {
+            'type1': {'read', 'write'}
+        },
+        'u3@example.com': {
+            'type1': {'read', 'write'}
+        },
+        'u1@example.com': {
+            'type1': {'read', 'write', 'list'},
+            'type2': {'read', 'write'},
+        },
+    }
 
     arg2res = {'group1': group1, 'group2': group2}
     account_service_mock = get_account_service_mock.return_value
@@ -117,11 +124,17 @@ class GroupSyncTest(absltest.TestCase):
     self.g._MakeUserEntity = mock.Mock()
 
     group_users = {
-        'u2@example.com': {'type1': set(['read', 'write'])},
-        'u3@example.com': {'type1': set(['read', 'write'])},
-        'u1@example.com': {'type1': set(['read', 'write', 'list']),
-                           'type2': set(['read', 'write'])},
-        }
+        'u2@example.com': {
+            'type1': {'read', 'write'}
+        },
+        'u3@example.com': {
+            'type1': {'read', 'write'}
+        },
+        'u1@example.com': {
+            'type1': {'read', 'write', 'list'},
+            'type2': {'read', 'write'},
+        },
+    }
 
     to_del_user = 'todelete@example.com'
 
@@ -141,8 +154,8 @@ class GroupSyncTest(absltest.TestCase):
 
     calls = []
     for u, p in group_users.iteritems():
-      calls.append((u, p, 'toadd-%s' % u))
-      to_add.append('toadd-%s' % u)
+      calls.append((u, p, f'toadd-{u}'))
+      to_add.append(f'toadd-{u}')
 
     def MatchCallSideEffect(a1, a2):
       for u, p, r in calls:
@@ -150,6 +163,7 @@ class GroupSyncTest(absltest.TestCase):
           continue
         return r
       raise ValueError
+
     self.g._MakeUserEntity.side_effect = MatchCallSideEffect
 
     self.g.get()

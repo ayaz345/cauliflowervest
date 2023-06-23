@@ -93,12 +93,11 @@ def SendEmail(recipients, subject, body, sender=None, reply_to=None,
     logging.info(
         'Would have sent email to %s:\nSubject: %s\nBody:\n\n%s',
         recipients, subject, body)
+  elif defer:
+    deferred.defer(
+        _Send, recipients, subject, body, sender, reply_to, bcc_recipients)
   else:
-    if defer:
-      deferred.defer(
-          _Send, recipients, subject, body, sender, reply_to, bcc_recipients)
-    else:
-      _Send(recipients, subject, body, sender, reply_to, bcc_recipients)
+    _Send(recipients, subject, body, sender, reply_to, bcc_recipients)
 
 
 def XsrfTokenGenerate(action, user=None, timestamp=None):
@@ -133,9 +132,7 @@ def XsrfTokenValidate(token, action, user=None, timestamp=None, time_=time):
 
   if timestamp + XSRF_VALID_TIME < time_.time():
     return False
-  if token != XsrfTokenGenerate(action, user, timestamp):
-    return False
-  return True
+  return token == XsrfTokenGenerate(action, user, timestamp)
 
 
 def ToSafeJson(obj):

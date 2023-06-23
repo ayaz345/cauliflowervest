@@ -111,12 +111,12 @@ class CauliflowerVestClient(object):
     request = urllib2.Request(url)
     try:
       response = self.opener.open(request)
-    except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
+    except urllib2.URLError as e:# Parent of urllib2.HTTPError.
       if isinstance(e, urllib2.HTTPError):
-        e.msg += ': ' + e.read()
+        e.msg += f': {e.read()}'
         if e.code == httplib.NOT_FOUND:
-          raise NotFoundError('Failed to retrieve passphrase. %s' % e)
-      raise RequestError('Failed to retrieve passphrase. %s' % e)
+          raise NotFoundError(f'Failed to retrieve passphrase. {e}')
+      raise RequestError(f'Failed to retrieve passphrase. {e}')
     content = response.read()
     if not content.startswith(JSON_PREFIX):
       raise RequestError('Expected JSON prefix missing.')
@@ -133,7 +133,7 @@ class CauliflowerVestClient(object):
       self._metadata = self._GetMetadata()
     for key in self.REQUIRED_METADATA:
       if not self._metadata.get(key, None):
-        raise MetadataError('Required metadata is not found: %s' % key)
+        raise MetadataError(f'Required metadata is not found: {key}')
 
   def SetOwner(self, owner):
     if not self._metadata:
@@ -155,15 +155,14 @@ class CauliflowerVestClient(object):
         return self.opener.open(request)
       except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
         if isinstance(e, urllib2.HTTPError):
-          e.msg += ': ' + e.read()
+          e.msg += f': {e.read()}'
           # Reraise if HTTP 4xx and retry_4xx is False
           if 400 <= e.code < 500 and not retry_4xx:
-            raise RequestError('%s failed: %s' % (description, e))
+            raise RequestError(f'{description} failed: {e}')
         # Otherwise retry other HTTPError and URLError failures.
         if try_num == self.MAX_TRIES - 1:
           logging.exception('%s failed permanently.', description)
-          raise RequestError(
-              '%s failed permanently: %s' % (description, e))
+          raise RequestError(f'{description} failed permanently: {e}')
         logging.warning(
             '%s failed with (%s). Retrying ...', description, e)
         time.sleep((try_num + 1) * self.TRY_DELAY_FACTOR)
@@ -187,10 +186,10 @@ class CauliflowerVestClient(object):
     request = urllib2.Request(url)
     try:
       response = self.opener.open(request)
-    except urllib2.URLError as e:  # Parent of urllib2.HTTPError.
+    except urllib2.URLError as e:# Parent of urllib2.HTTPError.
       if isinstance(e, urllib2.HTTPError):
-        e.msg += ': ' + e.read()
-      raise RequestError('Failed to get status. %s' % e)
+        e.msg += f': {e.read()}'
+      raise RequestError(f'Failed to get status. {e}')
     content = response.read()
     if not content.startswith(JSON_PREFIX):
       raise RequestError('Expected JSON prefix missing.')
@@ -208,7 +207,6 @@ class CauliflowerVestClient(object):
     """
     xsrf_token = self._FetchXsrfToken(base_settings.SET_PASSPHRASE_ACTION)
 
-    # Ugh, urllib2 only does GET and POST?!
     class PutRequest(urllib2.Request):
 
       def __init__(self, *args, **kwargs):
@@ -225,7 +223,7 @@ class CauliflowerVestClient(object):
     parameters = self._metadata.copy()
     parameters['xsrf-token'] = xsrf_token
     parameters['volume_uuid'] = target_id
-    url = '%s?%s' % (self.escrow_url, urllib.urlencode(parameters))
+    url = f'{self.escrow_url}?{urllib.urlencode(parameters)}'
 
     request = PutRequest(url, data=passphrase)
     self._RetryRequest(request, 'Uploading passphrase', retry_4xx=retry_4xx)
@@ -280,7 +278,7 @@ def GetOauthCredentials():
         httpd.query_params,
         http=httplib2.Http(ca_certs=settings.ROOT_CA_CERT_CHAIN_PEM_FILE_PATH))
   except oauth2client.client.FlowExchangeError as e:
-    raise AuthenticationError('Authentication has failed: %s' % e)
+    raise AuthenticationError(f'Authentication has failed: {e}')
   else:
     logging.info('Authentication successful!')
     return credentials

@@ -100,17 +100,17 @@ class FileVaultTool(object):
           'Problem running %s (exit status = %d)' % (self.NAME, e.returncode))
     else:
       logging.exception('Problem running %s.', self.NAME)
-      raise Error('Problem running %s' % self.NAME, e)
+      raise Error(f'Problem running {self.NAME}', e)
 
   def _HandleResult(self, result_plist):
     """Parse the (plist) output of a FileVault tool."""
     recovery_token = result_plist.get(self.OUTPUT_PLIST_TOKEN_KEY)
     if not recovery_token:
       raise Error('Could not get recovery token!')
-    volume_uuid = result_plist.get('LVUUID', None)
-    if not volume_uuid:
+    if volume_uuid := result_plist.get('LVUUID', None):
+      return volume_uuid, recovery_token
+    else:
       raise Error('Could not get volume UUID!')
-    return volume_uuid, recovery_token
 
 
 class FullDiskEncryptionSetup(FileVaultTool):
@@ -153,10 +153,10 @@ class APFSDiskEncryptionSetup(FullDiskEncryptionSetup):
     hardware_uuid = result_plist.get('HardwareUUID', None)  # sanity check
     if not hardware_uuid:
       raise Error('Could not get Hardware UUID!')
-    volume_uuid = apfs.APFSStorage().GetPrimaryVolumeUUID()
-    if not volume_uuid:
+    if volume_uuid := apfs.APFSStorage().GetPrimaryVolumeUUID():
+      return volume_uuid, recovery_token
+    else:
       raise Error('Could not get Volume UUID!')
-    return volume_uuid, recovery_token
 
 
 def UpdateEscrowPassphrase(username, password):
@@ -188,8 +188,7 @@ def UpdateEscrowPassphrase(username, password):
     logging.error(e.stderr)
     raise Error(e.message)
 
-  recovery_key = result_plist.get('RecoveryKey')
-  return recovery_key
+  return result_plist.get('RecoveryKey')
 
 
 
@@ -201,7 +200,7 @@ def ApplyEncryption(fvclient, username, password):
     entropy = util.RetrieveEntropy()
     util.SupplyEntropy(entropy)
   except util.EntropyError as e:
-    raise Error('Entropy operations failed: %s' % str(e))
+    raise Error(f'Entropy operations failed: {str(e)}')
 
   # Use "fdesetup" on Mac OS 10.8+ (Mountain Lion).
   logging.debug('Using fdesetup to enable FileVault')
@@ -236,8 +235,7 @@ def GetFilesystemType():
   except util.ExecError:
     logging.error('FilesystemType lookup failed.  Defaulting to hfs')
     return 'hfs'
-  fstype = plist.get('FilesystemType', None)
-  return fstype
+  return plist.get('FilesystemType', None)
 
 
 def GetStorage():

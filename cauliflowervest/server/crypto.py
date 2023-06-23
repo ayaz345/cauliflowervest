@@ -77,12 +77,12 @@ class CauliflowerVestReader(readers.Reader):
     try:
       func = ENCRYPTION_KEY_TYPES[key_type]
     except KeyError:
-      raise ValueError('Unknown key_type: %s' % key_type)
+      raise ValueError(f'Unknown key_type: {key_type}')
 
     keys = func()
 
     if not keys:
-      raise ValueError('No keys returned for key_type: %s' % key_type)
+      raise ValueError(f'No keys returned for key_type: {key_type}')
 
     for key in keys:
       version_number = key['versionNumber']

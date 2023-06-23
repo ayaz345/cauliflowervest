@@ -143,7 +143,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
 
     self.c.opener.open.return_value.code = httplib.OK
     self.c.opener.open.return_value.read.return_value = (
-        base_client.JSON_PREFIX + 'true')
+        f'{base_client.JSON_PREFIX}true')
 
     self.assertTrue(self.c.IsKeyRotationNeeded('UUID'))
 
@@ -190,7 +190,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
       if read:
         mock_response.read.return_value = base_client.JSON_PREFIX + content
     else:
-      mock_fp = StringIO.StringIO('Detailed error message for %s.' % code)
+      mock_fp = StringIO.StringIO(f'Detailed error message for {code}.')
       exc = base_client.urllib2.HTTPError(
           'url', code, httplib.responses[code], {}, mock_fp)
       self.c.opener.open.side_effect = exc
@@ -245,7 +245,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
 
         side_effect.append(mock_response)
       else:
-        mock_fp = StringIO.StringIO('Detailed error message for %s.' % code)
+        mock_fp = StringIO.StringIO(f'Detailed error message for {code}.')
         exc = base_client.urllib2.HTTPError(
             'url', code, httplib.responses[code], {}, mock_fp)
         side_effect.append(exc)
@@ -282,9 +282,7 @@ class CauliflowerVestClientTest(absltest.TestCase):
 
   @mock.patch.object(time, 'sleep')
   def testUploadPassphraseWithServerError(self, sleep_mock):
-    reqs = []
-    for _ in xrange(0, 5):
-      reqs.append(httplib.INTERNAL_SERVER_ERROR)
+    reqs = [httplib.INTERNAL_SERVER_ERROR for _ in xrange(0, 5)]
     self._UploadTest(reqs)
 
     with self.assertRaisesRegexp(

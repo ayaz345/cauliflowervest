@@ -82,7 +82,7 @@ class FileVaultChangeOwnerAccessHandlerTest(test_util.BaseTest):
 
   @property
   def change_owner_url(self):
-    return '/api/internal/change-owner/filevault/%s/' % (self.volume_id)
+    return f'/api/internal/change-owner/filevault/{self.volume_id}/'
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testChangeOwner(self):

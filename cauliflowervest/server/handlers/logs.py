@@ -47,10 +47,7 @@ class Logs(base_handler.BaseHandler):
 
     logs = logs_query.fetch(PER_PAGE + 1)
     more = len(logs) == PER_PAGE + 1
-    start_next = None
-    if more:
-      start_next = logs[-1].paginate_mtime
-
+    start_next = logs[-1].paginate_mtime if more else None
     logs = [db.to_dict(log) for log in logs[:PER_PAGE]]
     for log in logs:
       log['user'] = str(log['user'])

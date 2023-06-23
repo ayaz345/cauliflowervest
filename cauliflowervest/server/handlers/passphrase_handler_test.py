@@ -67,8 +67,7 @@ class GetTest(test_util.BaseTest):
         platform_uuid='stub',
     ).put()
 
-    resp = self.testapp.get(
-        '/filevault/%s?json=1' % vol_uuid, status=httplib.OK)
+    resp = self.testapp.get(f'/filevault/{vol_uuid}?json=1', status=httplib.OK)
     self.assertIn('"passphrase": "stub_pass1"', resp.body)
 
     volumes = models.FileVaultVolume.all().fetch(None)
@@ -98,8 +97,8 @@ class PutTest(test_util.BaseTest):
         'serial': 'stub',
         'json': 1,
     }
-    resp = self.testapp.put(
-        '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)), params=secret)
+    resp = self.testapp.put(f'/filevault/{vol_uuid}?{urllib.urlencode(qs)}',
+                            params=secret)
 
     self.assertIn('successfully escrowed', resp.body)
 
@@ -122,8 +121,8 @@ class PutTest(test_util.BaseTest):
         'serial': 'stub',
         'json': 1,
     }
-    resp = self.testapp.put(
-        '/filevault/%s?%s' % (vol_uuid, urllib.urlencode(qs)), params=secret)
+    resp = self.testapp.put(f'/filevault/{vol_uuid}?{urllib.urlencode(qs)}',
+                            params=secret)
 
     self.assertIn('successfully escrowed', resp.body)
 
@@ -143,8 +142,8 @@ class PutTest(test_util.BaseTest):
         'platform_uuid': 'stub',
         'tag': tag,
     }
-    resp = self.testapp.put(
-        '/luks/%s?%s' % (volume_uuid, urllib.urlencode(params)), params=secret)
+    resp = self.testapp.put(f'/luks/{volume_uuid}?{urllib.urlencode(params)}',
+                            params=secret)
 
     self.assertEqual(httplib.OK, resp.status_int)
     self.assertEqual(tag, models.LuksVolume.all().fetch(1)[0].tag)
@@ -169,7 +168,7 @@ class PutTest(test_util.BaseTest):
         'platform_uuid': 'stub',
     }
 
-    self.testapp.put('/luks/%s?%s' % (volume_uuid, urllib.urlencode(params)),
+    self.testapp.put(f'/luks/{volume_uuid}?{urllib.urlencode(params)}',
                      params=secret)
 
     vols = models.LuksVolume.all().fetch(999)
@@ -202,7 +201,7 @@ class RetrieveSecretTest(test_util.BaseTest):
         platform_uuid='stub',
         volume_uuid=vol_uuid).put()
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get('/luks/%s?json=1' % vol_uuid)
+      resp = self.testapp.get(f'/luks/{vol_uuid}?json=1')
 
       o = util.FromSafeJson(resp.body)
       self.assertTrue(o['qr_img_url'])
@@ -225,7 +224,7 @@ class RetrieveSecretTest(test_util.BaseTest):
         volume_uuid=vol_uuid).put()
 
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get('/luks/%s?json=1' % vol_uuid)
+      resp = self.testapp.get(f'/luks/{vol_uuid}?json=1')
 
       o = util.FromSafeJson(resp.body)
       self.assertFalse(o['qr_img_url'])
@@ -233,9 +232,9 @@ class RetrieveSecretTest(test_util.BaseTest):
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testNoPassphraseFound(self):
     vol_uuid = str(uuid.uuid4()).upper()
-    resp = self.testapp.get('/filevault/%s?json=1' % vol_uuid,
+    resp = self.testapp.get(f'/filevault/{vol_uuid}?json=1',
                             status=httplib.NOT_FOUND)
-    self.assertEqual('Passphrase not found: target_id %s' % vol_uuid, resp.body)
+    self.assertEqual(f'Passphrase not found: target_id {vol_uuid}', resp.body)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testCheckAuthzCreatorOk(self):
@@ -256,9 +255,8 @@ class RetrieveSecretTest(test_util.BaseTest):
     ).put()
 
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get('/filevault/%s?json=1' % vol_uuid,
-                              status=httplib.OK)
-    self.assertIn('"passphrase": "%s"' % secret, resp.body)
+      resp = self.testapp.get(f'/filevault/{vol_uuid}?json=1', status=httplib.OK)
+    self.assertIn(f'"passphrase": "{secret}"', resp.body)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testCheckAuthzGlobalOk(self):
@@ -278,10 +276,9 @@ class RetrieveSecretTest(test_util.BaseTest):
     ).put()
 
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get(
-          '/filevault/%s?json=1&id=%s' % (vol_uuid, volume_id),
-          status=httplib.OK)
-    self.assertIn('"passphrase": "%s"' % secret, resp.body)
+      resp = self.testapp.get(f'/filevault/{vol_uuid}?json=1&id={volume_id}',
+                              status=httplib.OK)
+    self.assertIn(f'"passphrase": "{secret}"', resp.body)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testCheckAuthzOwnerFail(self):
@@ -301,7 +298,7 @@ class RetrieveSecretTest(test_util.BaseTest):
     ).put()
 
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get('/filevault/%s?json=1' % vol_uuid,
+      resp = self.testapp.get(f'/filevault/{vol_uuid}?json=1',
                               status=httplib.FORBIDDEN)
       self.assertIn('Access denied.', resp.body)
 
@@ -323,9 +320,8 @@ class RetrieveSecretTest(test_util.BaseTest):
     ).put()
 
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get('/filevault/%s?json=1' % vol_uuid,
-                              status=httplib.OK)
-    self.assertIn('"passphrase": "%s"' % secret, resp.body)
+      resp = self.testapp.get(f'/filevault/{vol_uuid}?json=1', status=httplib.OK)
+    self.assertIn(f'"passphrase": "{secret}"', resp.body)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testLuksAsNonOwner(self):
@@ -344,8 +340,7 @@ class RetrieveSecretTest(test_util.BaseTest):
         volume_uuid=vol_uuid).put()
 
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get('/luks/%s?json=1' % vol_uuid,
-                              status=httplib.FORBIDDEN)
+      resp = self.testapp.get(f'/luks/{vol_uuid}?json=1', status=httplib.FORBIDDEN)
     self.assertIn('Access denied.', resp.body)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
@@ -365,9 +360,8 @@ class RetrieveSecretTest(test_util.BaseTest):
         volume_uuid=vol_uuid).put()
 
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get('/luks/%s?json=1' % vol_uuid,
-                              status=httplib.OK)
-    self.assertIn('"passphrase": "%s"' % secret, resp.body)
+      resp = self.testapp.get(f'/luks/{vol_uuid}?json=1', status=httplib.OK)
+    self.assertIn(f'"passphrase": "{secret}"', resp.body)
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
   def testSilentRetrieve(self):
@@ -386,7 +380,7 @@ class RetrieveSecretTest(test_util.BaseTest):
         volume_uuid=vol_uuid).put()
 
     with mock.patch.object(util, 'SendEmail') as mock_send_email:
-      self.testapp.get('/luks/%s?json=1' % vol_uuid, status=httplib.OK)
+      self.testapp.get(f'/luks/{vol_uuid}?json=1', status=httplib.OK)
       mock_send_email.assert_not_called()
 
   @mock.patch.dict(settings.__dict__, {'XSRF_PROTECTION_ENABLED': False})
@@ -407,9 +401,8 @@ class RetrieveSecretTest(test_util.BaseTest):
     ).put()
 
     with mock.patch.object(util, 'SendEmail') as _:
-      resp = self.testapp.get('/provisioning/%s?json=1' % vol_uuid,
-                              status=httplib.OK)
-    self.assertIn('"passphrase": "%s"' % secret, resp.body)
+      resp = self.testapp.get(f'/provisioning/{vol_uuid}?json=1', status=httplib.OK)
+    self.assertIn(f'"passphrase": "{secret}"', resp.body)
 
 
 class SendRetrievalEmailTest(test_util.BaseTest, parameterized.TestCase):
@@ -420,7 +413,7 @@ class SendRetrievalEmailTest(test_util.BaseTest, parameterized.TestCase):
 
   def testSubjectConstantsExistForAllTypes(self):
     for escrow_type in permissions.TYPES:
-      var_name = '%s_RETRIEVAL_EMAIL_SUBJECT' % escrow_type.upper()
+      var_name = f'{escrow_type.upper()}_RETRIEVAL_EMAIL_SUBJECT'
       self.assertTrue(hasattr(settings, var_name))
 
 
@@ -449,7 +442,7 @@ class SendRetrievalEmailTest(test_util.BaseTest, parameterized.TestCase):
     ).put()
 
     with mock.patch.object(util, 'SendEmail') as mock_send_email:
-      self.testapp.get('/provisioning/%s?json=1' % vol_uuid)
+      self.testapp.get(f'/provisioning/{vol_uuid}?json=1')
       self.assertEqual(1, mock_send_email.call_count)
       recipients, _, _ = mock_send_email.call_args[0]
     self.assertEqual(['stub7@example.com', 'silent@example.com'], recipients)
@@ -481,7 +474,7 @@ class SendRetrievalEmailTest(test_util.BaseTest, parameterized.TestCase):
     ).put()
 
     with mock.patch.object(util, 'SendEmail') as mock_send_email:
-      self.testapp.get('/provisioning/%s?json=1' % vol_uuid)
+      self.testapp.get(f'/provisioning/{vol_uuid}?json=1')
       self.assertEqual(1, mock_send_email.call_count)
       recipients, _, _ = mock_send_email.call_args[0]
     self.assertItemsEqual(

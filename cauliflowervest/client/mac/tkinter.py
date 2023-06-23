@@ -50,7 +50,7 @@ class Countdown(threading.Thread):
 
   def run(self):
     for remaining in range(self.seconds, 0, -1):
-      self.label['text'] = '%s (%s)' % (self.original_text, remaining)
+      self.label['text'] = f'{self.original_text} ({remaining})'
       time.sleep(1)
     self.termination_callback()
 
@@ -139,7 +139,7 @@ class Gui(object):
     self.unlock_volume.set(encrypted_volumes[0])
     for volume in encrypted_volumes:
       size = self.storage.GetVolumeSize(volume)
-      text = '%s %s' % (volume, size)
+      text = f'{volume} {size}'
       Tkinter.Radiobutton(
           self.top_frame, text=text, variable=self.unlock_volume, value=volume
           ).pack(anchor=Tkinter.W)
@@ -197,7 +197,6 @@ class Gui(object):
           self.top_frame, text='Restart now', command=self._RestartNow)
       btn.pack()
       countdown = Countdown(label=btn, termination_callback=self._RestartNow)
-      countdown.start()
     else:
       btn = Tkinter.Button(self.top_frame, text='OK', command=self.root.quit,
                            default=Tkinter.ACTIVE)
@@ -205,7 +204,8 @@ class Gui(object):
       btn.pack()
       btn.focus()
       countdown = Countdown(label=btn, termination_callback=self.root.quit)
-      countdown.start()
+
+    countdown.start()
 
   def _EncryptedVolumeAction(self, *unused_args):
     """Action to rotate recovery key on encrypted volume."""
@@ -218,7 +218,7 @@ class Gui(object):
       return self.ShowFatalError(e)
 
     action_dict = self.ACTIONS
-    self._PrepTop('Doing: %s...' % action_dict[self.action.get()])
+    self._PrepTop(f'Doing: {action_dict[self.action.get()]}...')
 
     volume_uuid = self.unlock_volume.get()
     message = None
@@ -233,10 +233,10 @@ class Gui(object):
 
     if self.action.get() == self.REVERT_ACTION:
       self.storage.RevertVolume(volume_uuid, passphrase, passwd)
-      message = 'Volume reverted successfully: %s' % volume_uuid
+      message = f'Volume reverted successfully: {volume_uuid}'
     elif self.action.get() == self.UNLOCK_ACTION:
       self.storage.UnlockVolume(volume_uuid, passphrase)
-      message = 'Volume unlocked successfully: %s' % volume_uuid
+      message = f'Volume unlocked successfully: {volume_uuid}'
     elif self.action.get() == self.DISPLAY_ACTION:
       self._PrepTop()
       Tkinter.Label(self.top_frame, text='').pack(fill=Tkinter.Y, expand=True)
@@ -319,11 +319,10 @@ class Gui(object):
       error_message = None
 
     self._PrepTop()
-    if True:
-      Tkinter.Label(
-          self.top_frame,
-          text='Only this user will be able to unlock the encrypted drive.'
-          ).pack()
+    Tkinter.Label(
+        self.top_frame,
+        text='Only this user will be able to unlock the encrypted drive.'
+        ).pack()
 
     if error_message:
       Tkinter.Label(

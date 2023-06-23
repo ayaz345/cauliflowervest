@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Flags that common for all clients."""
+
 import logging
 
 from absl import flags
@@ -27,12 +28,13 @@ flags.DEFINE_bool('debug', False, 'Enable debug mode.')
 flags.DEFINE_string(
     'login_type',
     'oauth2',
-    'Type of login to perform. One of: %s' % LOGIN_TYPE_OPTIONS,
+    f'Type of login to perform. One of: {LOGIN_TYPE_OPTIONS}',
 )
 flags.DEFINE_string(
     'server_url',
-    'https://' + base_settings.SERVER_HOSTNAME,
-    help='The URL where CauliflowerVest server is located (scheme + host, no path).',
+    f'https://{base_settings.SERVER_HOSTNAME}',
+    help=
+    'The URL where CauliflowerVest server is located (scheme + host, no path).',
 )
 flags.DEFINE_bool(
     'version', False, 'Display the version of the CauliflowerVest client.',

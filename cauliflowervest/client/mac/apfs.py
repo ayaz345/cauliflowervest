@@ -64,11 +64,7 @@ class APFSStorage(storage.Storage):
       except util.ExecError:
         return ([], [])
       containers = plist.get('Containers', [])
-      if containers:
-        volumes = containers[0].get('Volumes', [])
-      else:
-        volumes = []
-
+      volumes = containers[0].get('Volumes', []) if containers else []
       if not disk:   # save the full list for future lookups
         self._containers = containers
         self._volumes = volumes
@@ -76,14 +72,12 @@ class APFSStorage(storage.Storage):
       containers = self._containers
       volumes = self._volumes
 
-    if uuid:
-      uuid_volumes = []
-      for volume in volumes:
-        if volume.get('APFSVolumeUUID') == uuid:
-          uuid_volumes.append(volume)
-      return (uuid_volumes, containers)
-    else:
+    if not uuid:
       return (volumes, containers)
+    uuid_volumes = [
+        volume for volume in volumes if volume.get('APFSVolumeUUID') == uuid
+    ]
+    return (uuid_volumes, containers)
 
   def _GetAPFSVolumes(self, uuid=None, disk=None):
     (volumes, _) = self._GetAPFSVolumesAndContainers(uuid=uuid, disk=disk)
@@ -91,9 +85,7 @@ class APFSStorage(storage.Storage):
 
   def GetVolumeUUID(self, disk):
     (volumes, _) = self._GetAPFSVolumesAndContainers(disk=disk)
-    if not volumes:
-      return None
-    return volumes[0].get('APFSVolumeUUID', None)
+    return None if not volumes else volumes[0].get('APFSVolumeUUID', None)
 
   def GetPrimaryVolumeUUID(self):
     """Returns string UUID of the boot volume (/), or None if error."""
@@ -120,10 +112,11 @@ class APFSStorage(storage.Storage):
       None, if no recovery partition exists or cannot be detected.
     """
     volumes = self._GetAPFSVolumes()
-    for volume in volumes:
-      if volume.get('Name') == 'Recovery':
-        return '/dev/%s' % volume.get('DeviceIdentifier')
-    return None
+    return next(
+        (f"/dev/{volume.get('DeviceIdentifier')}"
+         for volume in volumes if volume.get('Name') == 'Recovery'),
+        None,
+    )
 
   def GetStateAndVolumeIds(self):
     """Determine the state of APFS and the volume IDs (if any).
@@ -198,20 +191,15 @@ class APFSStorage(storage.Storage):
       InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise storage.InvalidUUIDErrorError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDErrorError(f'Invalid UUID: {uuid}')
     (volumes, containers) = self._GetAPFSVolumesAndContainers(uuid)
 
-    num_bytes = 0
-    for volume in volumes:
-      if volume.get('APFSVolumeUUID') == uuid:
-        num_bytes = (containers[0].get('CapacityFree') +
-                     volume.get('CapacityInUse'))
-        break
-
-    if readable:
-      return '%.2f GiB' % (num_bytes / (1<<30))
-    else:
-      return num_bytes
+    num_bytes = next(
+        ((containers[0].get('CapacityFree') + volume.get('CapacityInUse'))
+         for volume in volumes if volume.get('APFSVolumeUUID') == uuid),
+        0,
+    )
+    return '%.2f GiB' % (num_bytes / (1<<30)) if readable else num_bytes
 
   def UnlockVolume(self, uuid, passphrase):
     """Unlock an APFS encrypted volume.
@@ -224,15 +212,14 @@ class APFSStorage(storage.Storage):
       InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError(f'Invalid UUID: {uuid}')
     returncode, _, stderr = util.Exec(
         (DISKUTIL, 'apfs', 'unlockVolume', uuid, '-stdinpassphrase'),
         stdin=passphrase)
     if (returncode != 0 and
         'volume is not locked' not in stderr and
         'is already unlocked' not in stderr):
-      raise storage.CouldNotUnlockError(
-          'Could not unlock volume (%s).' % returncode)
+      raise storage.CouldNotUnlockError(f'Could not unlock volume ({returncode}).')
 
   def RevertVolume(self, uuid, passphrase, passwd=''):
     """Disable encryption on an APFS system.
@@ -247,12 +234,12 @@ class APFSStorage(storage.Storage):
       InvalidUUIDError: The UUID is formatted incorrectly.
     """
     if not util.UuidIsValid(uuid):
-      raise storage.InvalidUUIDError('Invalid UUID: ' + uuid)
+      raise storage.InvalidUUIDError(f'Invalid UUID: {uuid}')
     self.UnlockVolume(uuid, passphrase)
     returncode, _, _ = util.Exec(
         ('sudo', '-k', '-S', FDESETUP, 'disable'),
         stdin=passwd+'\n')
 
     if returncode != 0:
-      raise storage.CouldNotRevertError('Could not disable encryption (%s).' % (
-          returncode))
+      raise storage.CouldNotRevertError(
+          f'Could not disable encryption ({returncode}).')
